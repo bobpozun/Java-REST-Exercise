@@ -23,16 +23,17 @@ class TestClass {
         authBody.put("username", "admin");
         authBody.put("password", "password123");
         authToken= given().
+                log().all().
                 contentType("application/json").
                 body(authBody.toJSONString()).
                 when().
                 post("/auth").
-                then().extract().
-                path("token");
+                then().log().all().
+                extract().path("token");
     }
 
     @Test
-    public void GetWeatherDetails() throws IOException, InterruptedException {
+    public void ExampleTest() throws IOException, InterruptedException {
         var checkin = "2020-09-01";
         var checkout = "2020-09-10";
         var firstname = "Robert";
