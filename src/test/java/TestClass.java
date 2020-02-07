@@ -53,5 +53,37 @@ class TestClass {
         createBody.put("depositpaid", depositpaid);
         createBody.put("bookingdates", bookingdates);
         createBody.put("additionalneeds", additionalneeds);
+
+        var bookingId = given().
+            when().
+            contentType("application/json").
+            body(createBody.toJSONString()).
+            post("/booking").
+            then().
+            statusCode(200).
+            extract().
+            path("bookingid");
+
+        get("/booking/" + bookingId).
+            then().
+            log().all().
+            body("firstname", equalTo("Robert"));
+
+        JSONObject updateBody = new JSONObject();
+        updateBody.put("firstname", "James");
+
+        given().
+            cookie("token", authToken).
+            when().
+            contentType("application/json").
+            body(updateBody.toJSONString()).
+            patch("/booking/" + bookingId).
+            then().
+            statusCode(200);
+
+        get("/booking/" + bookingId).
+            then().
+            log().all().
+            body("firstname", equalTo("James"));
     }
 }
