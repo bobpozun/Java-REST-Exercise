@@ -1,5 +1,8 @@
 import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
+
 import org.json.simple.JSONObject;
+import org.junit.Assert;
 import org.testng.annotations.BeforeSuite;
 import org.testng.annotations.Test;
 
@@ -8,6 +11,7 @@ import java.io.IOException;
 import static io.restassured.RestAssured.get;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertEquals;
 
 class TestClass {
     String authToken;
@@ -53,5 +57,85 @@ class TestClass {
         createBody.put("depositpaid", depositpaid);
         createBody.put("bookingdates", bookingdates);
         createBody.put("additionalneeds", additionalneeds);
+
+        JSONObject updateBody = new JSONObject();
+        updateBody.put("firstname", "James");
+        updateBody.put("lastname", lastname);
+        updateBody.put("totalprice", totalprice);
+        updateBody.put("depositpaid", depositpaid);
+        updateBody.put("bookingdates", bookingdates);
+        updateBody.put("additionalneeds", additionalneeds);
+
+
+
+        /* 
+            Create a booking using the above json object
+            Get the booking using the id returned and assert firstname == Robert
+            Update the firstname to James
+            Get the booking again and assert firstname == James
+        */
+
+        //Create a Booking with No Auth Required
+        
+
+        String bookingId =  given()
+            .when()
+            .contentType("application/json")
+            .body(createBody.toJSONString())
+            .post("/booking").then().extract().path("bookingid").toString()
+            ;   
+
+
+
+        // Get the Created Booking
+        
+         given()
+         .param("id", bookingId)
+            .when()
+            .get("/booking")
+            .then().extract().path("firstname");
+
+
+        // Assert.assertTrue("Robert".equals(firstName.trim()));
+        
+        //Update  the Booking
+
+            String updatedFirstName = given()
+            .when()
+            .cookie("token", authToken)
+            .accept("application/json")
+            .contentType("application/json")
+            .body(updateBody.toJSONString())
+            .put("/booking/"+bookingId)
+            .then()
+            
+            .log().all()
+            .extract().path("firstname").toString();
+
+            System.out.println("UPDATED FIRSTNAME : " + updatedFirstName);
+            //    Assert.assertEquals("James", updatedFirstName);
+            
+              Assert.assertTrue("James".equals(updatedFirstName.trim()));
+            
+    
+        
+        //Get the updated Booking
+
+        String updateFirstNameFromGetResponse = 
+        given()
+         .param("id", bookingId)
+            .when()
+            .get("/booking")
+            .then()
+             .log().all()
+            .extract().path("firstname")();
+
+            System.out.println("FIRSTNAME from GET SERVICE : " + updateFirstNameFromGetResponse);
+
     }
+
+    
+
+
+
 }
