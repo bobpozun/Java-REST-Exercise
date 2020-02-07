@@ -87,18 +87,16 @@ class TestClass {
 
 
 
-        // Get the Created Booking
+        // Get the Created Booking and validate first name
         
          given()
-         .param("id", bookingId)
             .when()
-            .get("/booking")
-            .then().extract().path("firstname");
+            .get("/booking/"+bookingId)
+            .then()
+            .body("firstname", equalTo("Robert"));
 
-
-        // Assert.assertTrue("Robert".equals(firstName.trim()));
         
-        //Update  the Booking
+        //Update  the Booking with new First name and valide response content
 
             String updatedFirstName = given()
             .when()
@@ -108,34 +106,21 @@ class TestClass {
             .body(updateBody.toJSONString())
             .put("/booking/"+bookingId)
             .then()
-            
             .log().all()
             .extract().path("firstname").toString();
 
             System.out.println("UPDATED FIRSTNAME : " + updatedFirstName);
-            //    Assert.assertEquals("James", updatedFirstName);
             
-              Assert.assertTrue("James".equals(updatedFirstName.trim()));
-            
-    
+            Assert.assertTrue("James".equals(updatedFirstName.trim()));
         
-        //Get the updated Booking
-
-        String updateFirstNameFromGetResponse = 
+        //Get the updated Booking and validae for new Name 
+       
         given()
          .param("id", bookingId)
             .when()
-            .get("/booking")
+             .get("/booking/"+bookingId)
             .then()
-             .log().all()
-            .extract().path("firstname")();
-
-            System.out.println("FIRSTNAME from GET SERVICE : " + updateFirstNameFromGetResponse);
+            .body("firstname", equalTo("James"));
 
     }
-
-    
-
-
-
 }
