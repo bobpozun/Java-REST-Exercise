@@ -53,5 +53,39 @@ class TestClass {
         createBody.put("depositpaid", depositpaid);
         createBody.put("bookingdates", bookingdates);
         createBody.put("additionalneeds", additionalneeds);
+
+
+        //Create a booking using the above json object createBody
+
+       // jsonResponse = rest().given.when().body(authBody.toJSONString().post(/auth));
+
+
+        int bookingid = given().
+                log().all().
+                contentType("application/json").
+                body(createBody.toJSONString()).
+                when().
+                post("/booking").
+                then().log().all().
+                extract().path("bookingid");
+            //String authToken = then().extract().body().getString("","43");
+
+        //Get the booking using the id returned and assert firstname == Robert
+
+
+        
+         given().
+                log().all().
+                contentType("application/json").
+                body(createBody.toJSONString()).
+                when().
+                get("/booking/43").
+                then().log().all().
+                extract().path("bookingid").equals(bookingid);
+
+
+        //Update the firstname to James
+        //Get the booking again and assert firstname == James
+
     }
 }
