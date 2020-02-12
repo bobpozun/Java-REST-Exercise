@@ -1,5 +1,11 @@
 import io.restassured.RestAssured;
+import io.restassured.path.json.JsonPath;
+import io.restassured.response.Response;
+import io.restassured.specification.RequestSpecification;
+import jdk.nashorn.internal.parser.JSONParser;
+
 import org.json.simple.JSONObject;
+import org.testng.Assert;
 import org.testng.annotations.BeforeSuite;
 import org.testng.annotations.Test;
 
@@ -13,7 +19,7 @@ class TestClass {
     String authToken;
 
     @BeforeSuite
-    public void setup(){
+    public void setup() {
         RestAssured.baseURI = "https://restful-booker.herokuapp.com/";
         RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
 
@@ -22,14 +28,8 @@ class TestClass {
         JSONObject authBody = new JSONObject();
         authBody.put("username", "admin");
         authBody.put("password", "password123");
-        authToken= given().
-                log().all().
-                contentType("application/json").
-                body(authBody.toJSONString()).
-                when().
-                post("/auth").
-                then().log().all().
-                extract().path("token");
+        authToken = given().log().all().contentType("application/json").body(authBody.toJSONString()).when()
+                .post("/auth").then().log().all().extract().path("token");
     }
 
     @Test
@@ -53,5 +53,51 @@ class TestClass {
         createBody.put("depositpaid", depositpaid);
         createBody.put("bookingdates", bookingdates);
         createBody.put("additionalneeds", additionalneeds);
+
+        // Create a booking using the above json object
+        // Get the booking using the id returned and assert firstname == Robert
+        // Update the firstname to James
+        // Get the booking again and assert firstname == James
+
+        RequestSpecification request = given().relaxedHTTPSValidation().auth().basic("", "").log().all();
+        request.contentType("application/json");
+        request.body(createBody.toJSONString());
+        Response response = request.post("/booking");
+        response.prettyPrint();
+
+        JsonPath jsonpath = new JsonPath(response.then().extract().asString());
+        int bookingID= jsonpath.getInt("bookingid");
+        System.out.println(bookingID);
+
+
+
+        RequestSpecification getBookingID= given().relaxedHTTPSValidation().auth().basic("", "").log().all();
+        Response getBookingIDResponse = getBookingID.get("/booking/"+bookingID);
+        getBookingIDResponse.prettyPrint();
+        String firstName_Actual =getBookingIDResponse.path("firstname");
+        Assert.assertEquals(firstname,firstName_Actual,"The String did not Match");
+
+        RequestSpecification updatingFNRequest = given().relaxedHTTPSValidation().auth().basic("", "").log().all();
+        updatingFNRequest.header("Content-Type","application/json");
+        updatingFNRequest.header("Accept","application/json");
+        updatingFNRequest.cookie("token",authToken);
+        updatingFNRequest.body("{\"firstname\" : \"James\"}");
+        Response updateResponse = updatingFNRequest.patch("/booking/"+bookingID);
+        updateResponse.prettyPrint();
+
+
+        RequestSpecification recallGet= given().relaxedHTTPSValidation().auth().basic("", "").log().all();
+        Response recallGetResponse = recallGet.get("/booking/"+bookingID);
+        recallGetResponse.prettyPrint();
+        String UpdatedfirstName =recallGetResponse.path("firstname");
+        Assert.assertEquals(UpdatedfirstName,"James","FN validation");
+
+
     }
+
+
+
+
+
+
 }
