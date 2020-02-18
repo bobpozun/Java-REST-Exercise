@@ -1,5 +1,10 @@
 import io.restassured.RestAssured;
+import io.restassured.http.Method;
+import io.restassured.response.Response;
+import io.restassured.specification.RequestSpecification;
+
 import org.json.simple.JSONObject;
+import org.testng.Assert;
 import org.testng.annotations.BeforeSuite;
 import org.testng.annotations.Test;
 
@@ -53,5 +58,35 @@ class TestClass {
         createBody.put("depositpaid", depositpaid);
         createBody.put("bookingdates", bookingdates);
         createBody.put("additionalneeds", additionalneeds);
+
+        /* 
+            Create a booking using the above json object
+            Get the booking using   the id returned and assert firstname == Robert
+            Update the firstname to James
+            Get the booking again and assert firstname == James
+        */
+
+        RequestSpecification httpRequest=RestAssured.given().header("Content-Type","application/json");
+        Response httpResponse;
+        //Create a booking using the above json object
+        httpResponse=httpRequest.body(createBody.toJSONString()).request(Method.POST,"/booking");
+        Assert.assertEquals(httpResponse.getStatusCode(),200, "Booking details Creation Failed:: ");
+        int bookingId=httpResponse.jsonPath().get("bookingid");
+
+        //Get the booking using the id returned and assert firstname == Robert
+        httpResponse=httpRequest.request(Method.GET,"/booking/"+bookingId);
+        Assert.assertEquals(httpResponse.getStatusCode(),200, "Booking details Retreival Failed:: ");
+       
+        //Update the firstname to James
+        httpRequest.cookie("token",authToken);
+        httpResponse=httpRequest.body("{\"firstname\" : \"James\"}").request(Method.PATCH,"/booking/"+bookingId);
+        Assert.assertEquals(httpResponse.getStatusCode(),200, "Booking details Update Failed:: ");
+
+        //Get the booking using the id returned and assert firstname == Robert
+        httpResponse=httpRequest.request(Method.GET,"/booking/"+bookingId);
+        Assert.assertEquals(httpResponse.getStatusCode(),200, "Updated Booking details Retreival Failed:: ");
+        String firstNamefromResponse=httpResponse.jsonPath().get("firstname");
+        Assert.assertEquals(firstNamefromResponse, "James","Mismatch between the expectedFirstName & firstNamefromResponse::");
+
     }
 }
