@@ -2,7 +2,6 @@ import io.restassured.RestAssured;
 import org.json.simple.JSONObject;
 import org.testng.annotations.BeforeSuite;
 import org.testng.annotations.Test;
-
 import java.io.IOException;
 
 import static io.restassured.RestAssured.get;
@@ -11,7 +10,7 @@ import static org.hamcrest.Matchers.equalTo;
 
 class TestClass {
     String authToken;
-
+    String id;
     @BeforeSuite
     public void setup(){
         RestAssured.baseURI = "https://restful-booker.herokuapp.com/";
@@ -53,5 +52,22 @@ class TestClass {
         createBody.put("depositpaid", depositpaid);
         createBody.put("bookingdates", bookingdates);
         createBody.put("additionalneeds", additionalneeds);
+
+        /* 
+            Create a booking using the above json object
+            Get the booking using the id returned and assert firstname == Robert
+            Update the firstname to James
+            Get the booking again and assert firstname == James
+        */
+
+         String name=  given().
+           header("Content-Type","application/json").
+
+           when().
+           body(createBody.toJSONString()).
+           post("booking/{id}").
+           then().statusCode(200).extract().path("firstname");
+           System.out.println("firstname");
+
     }
 }
