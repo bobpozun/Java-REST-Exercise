@@ -8,9 +8,12 @@ import java.io.IOException;
 import static io.restassured.RestAssured.get;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
+import org.springframework.http.HttpStatus;
 
 class TestClass {
     String authToken;
+
+
 
     @BeforeSuite
     public void setup(){
@@ -53,5 +56,36 @@ class TestClass {
         createBody.put("depositpaid", depositpaid);
         createBody.put("bookingdates", bookingdates);
         createBody.put("additionalneeds", additionalneeds);
+
+        int statusCode;
+        // Create a booking using the above json object
+
+RequestSpecification httpRequest = RestAssured.given();
+httpRequest.header("Content-Type", "application/json");
+httpRequest.body(createBody.toJSONString);
+
+Response response = httpRequest.request(Method.POST);
+statusCode =  response.getStatusCode();
+
+Assert.assertEquals(statusCode,201);
+
+        
+        
+
+        // Get the booking using the id returned and assert firstname == Robert
+        
+RequestSpecification httpRequestGet = RestAssured.given();
+        Response responseGet = httpRequestGet.request(Method.GET,"/");
+
+statuscode =         response.getStatusCode();
+Assert.assertEquakls(statusCode,200);
+
+
+        // Update the firstname to James
+       RequestSpecification httpRequestPut =  RestAssured.given();
+       httpR
+        
+        //Get the booking again and assert firstname == James
+
     }
 }
