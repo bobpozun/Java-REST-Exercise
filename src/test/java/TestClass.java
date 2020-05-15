@@ -1,4 +1,7 @@
 import io.restassured.RestAssured;
+import io.restassured.path.json.JsonPath;
+import io.restassured.response.Response;
+
 import org.json.simple.JSONObject;
 import org.testng.annotations.BeforeSuite;
 import org.testng.annotations.Test;
@@ -53,5 +56,19 @@ class TestClass {
         createBody.put("depositpaid", depositpaid);
         createBody.put("bookingdates", bookingdates);
         createBody.put("additionalneeds", additionalneeds);
+
+        // Create a booking using the above json object
+
+        RestAssured.given().body(createBody.toJSONString()).contentType("application/json").post("booking").then()
+                .statusCode(200).log().all();
+        
+        // Get the booking using the id returned and assert firstname == Robert
+        Response resp = RestAssured.get("booking/13");
+        
+        System.out.println("The resp ::" + resp.asString());
+        // Update the firstname to James
+        //System.out.println("The first name ::"+ actualname);
+        // Get the booking again and assert firstname == James
+
     }
 }
