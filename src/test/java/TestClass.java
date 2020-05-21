@@ -8,6 +8,7 @@ import java.io.IOException;
 import static io.restassured.RestAssured.get;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertEquals;
 
 class TestClass {
     String authToken;
@@ -53,5 +54,39 @@ class TestClass {
         createBody.put("depositpaid", depositpaid);
         createBody.put("bookingdates", bookingdates);
         createBody.put("additionalneeds", additionalneeds);
+
+        //  Create a booking using the above json object
+        var bookingid = given().log().all().contentType("application/json").body(createBody.toJSONString()).when()
+                .post("/booking").then().log().all().extract().path("bookingid");
+        System.out.println("Created Booking Id: " + bookingid);    
+        
+        // Get the booking using the id returned and assert firstname == Robert
+        var getBookingUrl = "/booking/" + bookingid;
+        var getBookingFirstName = given().log().all().contentType("application/json").when()
+                .get(getBookingUrl).then().log().all().extract().path("firstname");
+        System.out.println("Get Booking First Name: " + getBookingFirstName);
+        assertEquals("Robert", getBookingFirstName);
+
+        // Update the firstname to James    
+        var updateBookingUrl = "/booking/" + bookingid;
+
+        //Override first name.
+        JSONObject patchBody = new JSONObject();
+        patchBody.put("firstname", "James");
+        patchBody.put("lastname", createBody.get("lastname"));
+
+        var updatedBookingResponse = given().log().all().contentType("application/json")
+                .cookie("token", authToken)
+                .body(patchBody.toJSONString())
+                .when().patch(getBookingUrl).then()
+                .log().all();
+        System.out.println("Successfully Updated Booking First Name for BookingId: " + bookingid);
+        
+        // Get the booking again and assert firstname == James
+        var getUpdatedBookingFirstName = given().log().all().contentType("application/json").when().get(getBookingUrl).then()
+                .log().all().extract().path("firstname");
+        System.out.println("Get Updated Booking First Name: " + getUpdatedBookingFirstName);
+        assertEquals("James", getUpdatedBookingFirstName);
+
     }
 }
