@@ -1,7 +1,10 @@
 import io.restassured.RestAssured;
+import jdk.nashorn.internal.parser.JSONParser;
+
 import org.json.simple.JSONObject;
 import org.testng.annotations.BeforeSuite;
 import org.testng.annotations.Test;
+import java.util.*;
 
 import java.io.IOException;
 
@@ -13,10 +16,14 @@ import static org.junit.Assert.assertEquals;
 class TestClass {
     String authToken;
 
+    List<String> createBookingIdList;
+
     @BeforeSuite
     public void setup(){
         RestAssured.baseURI = "https://restful-booker.herokuapp.com/";
         RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
+
+        createBookingIdList = new ArrayList<>();
 
         get("/ping").then().statusCode(201);
 
@@ -33,13 +40,48 @@ class TestClass {
                 extract().path("token");
     }
 
+    /**
+     * Create a booking using the above json object
+     */
     @Test
-    public void ExampleTest() throws IOException, InterruptedException {
-        var checkin = "2020-09-01";
-        var checkout = "2020-09-10";
+    public void createBooking() throws IOException, InterruptedException {
         var firstname = "Robert";
         var lastname = "Smith";
-        var totalprice = 500;
+        var totalprice = 100;
+
+        //create booking #1
+        var createBody = buildRequest(firstname, lastname, totalprice);
+        var createBookingResponse = createBooking(createBody);
+        createBookingIdList.add(createBookingResponse.path("bookingid"));
+
+        assertEquals(firstname, createBookingResponse.path("booking.firstname"));
+        assertEquals(lastname, createBookingResponse.path("booking.lastname"));
+        assertEquals(new Integer(totalprice), createBookingResponse.path("booking.totalprice"));
+    }
+
+    private Response createBooking(JSONObject createBody) {
+        return given().log().all().contentType("application/json").body(createBody.toJSONString()).when()
+                .post("/booking").then().log().all().extract().response();
+    }
+
+    private JSONObject updateBooking(JSONObject createBody, String bookingId) {
+        return given().log().all().contentType("application/json")
+                .cookie("token", authToken)
+                .body(patchBody.toJSONString())
+                .when().patch("/booking/" + bookingid).then()
+                .log().all().extract().response();
+    }
+    
+    /**
+     * Build request
+     * @return
+     */
+    private JSONObject buildRequest(String firstName, String lastName, int totalPrice) {
+        var checkin = "2020-09-01";
+        var checkout = "2020-09-10";
+        var firstname = firstName;
+        var lastname = lastName;
+        var totalprice = totalPrice;
         var depositpaid = false;
         var additionalneeds = "Breakfast";
 
@@ -55,10 +97,13 @@ class TestClass {
         createBody.put("bookingdates", bookingdates);
         createBody.put("additionalneeds", additionalneeds);
 
-        //  Create a booking using the above json object
-        var bookingid = given().log().all().contentType("application/json").body(createBody.toJSONString()).when()
-                .post("/booking").then().log().all().extract().path("bookingid");
-        System.out.println("Created Booking Id: " + bookingid);    
+        return createBody;
+    }
+
+    public void ExampleTest() throws IOException, InterruptedException {
+        
+
+            
         
         // Get the booking using the id returned and assert firstname == Robert
         var getBookingUrl = "/booking/" + bookingid;
@@ -87,6 +132,14 @@ class TestClass {
                 .log().all().extract().path("firstname");
         System.out.println("Get Updated Booking First Name: " + getUpdatedBookingFirstName);
         assertEquals("James", getUpdatedBookingFirstName);
+
+        /*
+         * 1) Split tests into separate idempotent test cases - CreateBooking and UpdateBooking. 
+         * 2) Data drive the create booking test case. Create 4 dummy test data scenarios. 
+         * 3) Implement object serialization / deserialization for request and response objects 4) Expand on what is asserted in each test case
+         * 5) Delete all bookings created during test run 
+         * 6) Run the tests in a parallelized fashion
+         */
 
     }
 }
